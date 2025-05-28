@@ -41,7 +41,6 @@ namespace MinesweeperGame
 
         private int[,] neighborCounts;
         private bool[,] revealedCells;
-        private bool[,] openObstacles;
 
         private System.Windows.Forms.Timer gameTimer;
 
@@ -58,15 +57,15 @@ namespace MinesweeperGame
 
         public GameForm()
         {
-            this.Text = "Minesweeper ";
+            this.Text = "Minesweeper";
             this.FormBorderStyle = FormBorderStyle.None;
             this.WindowState = FormWindowState.Maximized;
             this.DoubleBuffered = true;
             this.KeyPreview = true;
 
-            playerImage = Image.FromFile("player.png");
-            flagImage = Image.FromFile("flag.png");
-            mineImage = Image.FromFile("mine.png");
+            playerImage = Image.FromFile("C:\\Users\\ilyak\\source\\repos\\MinesweeperGame\\MinesweeperGame\\player.png");
+            flagImage = Image.FromFile("C:\\Users\\ilyak\\source\\repos\\MinesweeperGame\\MinesweeperGame\\flag.png");
+            mineImage = Image.FromFile("C:\\Users\\ilyak\\source\\repos\\MinesweeperGame\\MinesweeperGame\\mine.png");
 
             startButton = new Button
             {
@@ -77,6 +76,7 @@ namespace MinesweeperGame
                 Size = new Size(300, 100),
                 Location = new Point(600, 400)
             };
+
             startButton.Click += StartButton_Click;
             this.Controls.Add(startButton);
 
@@ -87,7 +87,7 @@ namespace MinesweeperGame
             this.MouseDown += GameForm_MouseDown;
 
             gameTimer = new System.Windows.Forms.Timer();
-            gameTimer.Interval = 20;
+            gameTimer.Interval = 25;
             gameTimer.Tick += GameTimer_Tick;
 
             GenerateObstacles();
@@ -115,12 +115,39 @@ namespace MinesweeperGame
             cameraX = Math.Max(0, Math.Min(Cols * GridSize - this.ClientSize.Width, cameraX));
             cameraY = Math.Max(0, Math.Min(Rows * GridSize - this.ClientSize.Height, cameraY));
 
+            revealedCells = new bool[Cols, Rows];
+
+            int startX = playerX / GridSize;
+            int startY = playerY / GridSize;
+
             obstacles.Clear();
+
             GenerateObstacles();
-            InitializeGame();
+
+            CalculateNeighborCounts();
+
+            for (int dx = -1; dx <= 1; dx++)
+            {
+                for (int dy = -1; dy <= 1; dy++)
+                {
+                    int nx = startX + dx;
+                    int ny = startY + dy;
+
+                    if (nx >= 0 && nx < Cols && ny >= 0 && ny < Rows)
+                    {
+                        revealedCells[nx, ny] = true;
+
+                        if (neighborCounts[nx, ny] == 0)
+                        {
+                            FloodFillReveal(nx, ny);
+                        }
+                    }
+                }
+            }
+
             flags.Clear();
 
-            moveUp = false;
+            moveUp = false; 
             moveDown = false;
             moveLeft = false;
             moveRight = false;
@@ -129,7 +156,6 @@ namespace MinesweeperGame
         private void GameOver()
         {
             currentState = GameState.GameOver;
-            createOpenObstacles();
             ShowGameOverMenu();
             gameTimer.Stop();
         }
@@ -137,7 +163,6 @@ namespace MinesweeperGame
         private void WinGame()
         {
             gameWon = true;
-            createOpenObstacles();
             ShowWinScreen();
             gameTimer.Stop();
         }
@@ -290,38 +315,6 @@ namespace MinesweeperGame
             }
         }
 
-        private void InitializeGame()
-        {
-            GenerateObstacles();
-
-            CalculateNeighborCounts();
-
-            revealedCells = new bool[Cols, Rows];
-            openObstacles = new bool[Cols, Rows];
-
-            int startX = playerX / GridSize;
-            int startY = playerY / GridSize;
-
-            for (int dx = -1; dx <= 1; dx++)
-            {
-                for (int dy = -1; dy <= 1; dy++)
-                {
-                    int nx = startX + dx;
-                    int ny = startY + dy;
-
-                    if (nx >= 0 && nx < Cols && ny >= 0 && ny < Rows)
-                    {
-                        revealedCells[nx, ny] = true;
-
-                        if (neighborCounts[nx, ny] == 0)
-                        {
-                            FloodFillReveal(nx, ny);
-                        }
-                    }
-                }
-            }
-        }
-
         private void FloodFillReveal(int startX, int startY)
         {
             Queue<Point> queue = new Queue<Point>();
@@ -354,24 +347,6 @@ namespace MinesweeperGame
             }
         }
 
-        private void createOpenObstacles()
-        {
-            int startX = cameraX;
-            int startY = cameraY;
-            int endX = cameraX + this.ClientSize.Width;
-            int endY = cameraY + this.ClientSize.Height;
-
-            foreach (var obstacle in obstacles)
-            {
-                if (obstacle.Right > startX && obstacle.Left < endX &&
-                    obstacle.Bottom > startY && obstacle.Top < endY)
-                {
-                    int x = obstacle.X / GridSize;
-                    int y = obstacle.Y / GridSize;
-                    openObstacles[x, y] = true;
-                }
-            }
-        }
 
         private void ShowWinScreen()
         {
@@ -606,7 +581,7 @@ namespace MinesweeperGame
 
                     Rectangle playerStart = new Rectangle(200, 200, playerImage.Width, playerImage.Height);
                     overlaps = playerStart.IntersectsWith(obstacle);
-                    startField = (3 < row && row < 8) && (3 < col && col < 8);
+                    startField = (2 < row && row < 8) && (2 < col && col < 8);
                 }
                 while (overlaps || startField);
 
