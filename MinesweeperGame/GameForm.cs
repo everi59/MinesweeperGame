@@ -54,6 +54,10 @@ namespace MinesweeperGame
         private Button playAgainButton;
         private Button startButton;
 
+        private int maxFlags = 30;
+        private int remainingFlags = 30;
+        private Label flagCounterLabel;
+
 
         public GameForm()
         {
@@ -78,6 +82,7 @@ namespace MinesweeperGame
             };
 
             startButton.Click += StartButton_Click;
+
             this.Controls.Add(startButton);
 
             this.KeyDown += GameForm_KeyDown;
@@ -108,6 +113,19 @@ namespace MinesweeperGame
             playerY = 200;
             gameWon = false;
             currentState = GameState.Playing;
+            remainingFlags = maxFlags;
+
+            flagCounterLabel = new Label
+            {
+                Text = $"Флажки: {remainingFlags}",
+                Font = new Font("Arial", 16),
+                ForeColor = Color.White,
+                BackColor = Color.Black,
+                AutoSize = true,
+                Location = new Point(10, 10)
+            };
+
+            this.Controls.Add(flagCounterLabel);
 
             cameraX = playerX - this.ClientSize.Width / 2 + playerImage.Width / 2;
             cameraY = playerY - this.ClientSize.Height / 2 + playerImage.Height / 2;
@@ -224,12 +242,18 @@ namespace MinesweeperGame
                 if (flags.ContainsKey(cellPos))
                 {
                     flags.Remove(cellPos);
+                    remainingFlags++;
                 }
                 else
                 {
-                    flags[cellPos] = true;
+                    if (remainingFlags > 0)
+                    {
+                        flags[cellPos] = true;
+                        remainingFlags--;
+                    }
                 }
 
+                flagCounterLabel.Text = $"Флажки: {remainingFlags}";
                 this.Invalidate();
             }
         }
@@ -370,11 +394,13 @@ namespace MinesweeperGame
                 Size = new Size(200, 80),
                 Location = new Point(this.ClientSize.Width / 2 - 100, this.ClientSize.Height / 2)
             };
+
             playAgainButton.Click += (s, e) => {
                 this.Controls.Clear();
                 ResetGame();
                 gameTimer.Start();
             };
+
             this.Controls.Add(playAgainButton);
         }
 
@@ -389,6 +415,7 @@ namespace MinesweeperGame
                 Size = new Size(300, 100),
                 Location = new Point(this.ClientSize.Width / 2 - 150, this.ClientSize.Height / 2 - 50)
             };
+
             restartButton.Click += RestartButton_Click;
             this.Controls.Add(restartButton);
 
@@ -396,9 +423,10 @@ namespace MinesweeperGame
         private void RestartButton_Click(object sender, EventArgs e)
         {
             currentState = GameState.Playing;
-            ResetGame();
 
             this.Controls.Clear();
+
+            ResetGame();
 
             gameTimer.Start();
         }
